@@ -31,7 +31,9 @@ private:
 public:
 	Agent(int c, int coordX, int coordY) : color(c), x(coordX), y(coordY) {}
 
-	~Agent() {};
+	~Agent() {
+		color = -1; 
+	};
 
 	int getColor() { return color; }
 	pair<int, int> getCoordinates() { return make_pair(x, y); }
@@ -82,14 +84,15 @@ public:
 	}
 
 	pair<int, int> makeStep() {
-		if (x == planX || y == planY) {
-			y = planY;
-			x = planX;
-			planX = planY = 0;
-		}
-		else
-			x = planX;
-
+		if (x < planX) ++x; else
+			if (x > planX) --x; else
+				if (y < planY) ++y; else
+					if (y > planY) --y;
+					
+		if (planX == x && planY == y) {
+			planX = 0;
+			planY = 0;
+	}
 		return make_pair(x, y);
 	}
 
@@ -126,10 +129,9 @@ void const printMap(vector<vector<int>> & map) {
 				SetConsoleTextAttribute(hConsole, (WORD)(BACKGROUND | (*w) % NUMBER_OF_COLOR + 1));
 			}
 			
-				printf("%2.0d", *w);
+			printf("%1.0d", *w);
 			//cout << *w;
 			SetConsoleTextAttribute(hConsole, (WORD)(BACKGROUND | WHITE));
-
 		}
 		cout << endl;
 	}
@@ -149,7 +151,13 @@ void getInputData() {
 	SetConsoleTextAttribute(hConsole, (WORD)(BACKGROUND | WHITE));
 }
 
+void clearMapAfterDelete(vector<vector<int>> & map) {
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j)
+			if (planMap[i][j] != 0 && map[i][j] != planMap[i][j]) planMap[i][j] = 0;
+	}
 
+}
 
 int main() {
 
@@ -167,25 +175,37 @@ int main() {
 	printMap(map);
 
 	map[0][0] = (*agents.begin()).getColor();
+	planMap[0][0] = (*agents.begin()).getColor();
 
 	countOfIteration = 1;
 	--countOfCells;
 
 	// пока не все покрыли
+	int flagDeleteAgent = 3;
 	while (countOfCells != 0) {
+		++countOfIteration;
 		for (auto agent = agents.begin(); agent != agents.end(); ++agent) {
-			++countOfIteration;
+		/*	if (countOfCells < 20 && flagDeleteAgent > 0) {
+				(*agent).~Agent(); flagDeleteAgent--;
+				clearMapAfterDelete(map);
+			}*/
+			if ((*agent).getColor() != -1) {
+				
 
-			(*agent).getNewCoordinates(planMap);
+				(*agent).getNewCoordinates(planMap);
 
-			auto newCoordinates = (*agent).makeStep();
-			if (map[newCoordinates.first][newCoordinates.second] == 0)
-				map[newCoordinates.first][newCoordinates.second] = (*agent).getColor(), --countOfCells;
-			printMap(map);
+				auto newCoordinates = (*agent).makeStep();
+				if (map[newCoordinates.first][newCoordinates.second] == 0) {
+					map[newCoordinates.first][newCoordinates.second] = (*agent).getColor();
+					planMap[newCoordinates.first][newCoordinates.second] = (*agent).getColor();
+					--countOfCells;
+				}
+				printMap(map);
+			}
 			//	Sleep(100);
 		}
 	}
-
+	
 	cout << "Number of iterations: " << countOfIteration << endl;
 	cout << "Map after covering: " << endl;
 	printMap(map);
