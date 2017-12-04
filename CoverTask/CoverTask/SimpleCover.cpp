@@ -10,6 +10,9 @@ const int RED = 4;
 const int BACKGROUND = 0 << 4;
 const int NUMBER_OF_COLOR = 14;
 const int NONEPLAN = 0;
+const int DOWN = -1;
+const int UP = 1;
+const int VERTICAL_MOVE = 0;
 
 ifstream in("map.txt");
 ofstream out("map.txt");
@@ -96,6 +99,45 @@ public:
 		return make_pair(x, y);
 	}
 
+	pair<int, int> makeStep(int & moveHorisont) {
+	
+		if (moveHorisont == 0) {
+			y = y + 1;
+			return make_pair(x, y);
+		}
+		if (moveHorisont == UP) {
+			if (x + UP < height) {
+				x = x + UP;
+				return make_pair(x, y);
+			}
+			moveHorisont = DOWN;
+			y = y + 1;
+			if (y == width) {
+				x = 0;
+				y = 0;
+				return make_pair(0, 0);
+			}
+			return make_pair(x, y);
+		}
+		if (moveHorisont == DOWN) {
+			if (x + DOWN >= 0) {
+				x = x + DOWN;
+				return make_pair(x, y);
+			}
+			moveHorisont = UP;
+			y = y + 1;
+			if (y == width) {
+				x = 0;
+				y = 0;
+				return make_pair(0, 0);
+			}
+			return make_pair(x, y);
+		} 
+		x = 0;
+		y = 0;
+		return make_pair(0, 0);
+	}
+
 };
 
 void makeAgents(vector<Agent> & agents) {
@@ -164,7 +206,7 @@ int main() {
 	getInputData();
 
 	long long countOfCells = width * height;
-
+	 
 	vector<Agent> agents;
 	vector<vector<int>> map;
 
@@ -172,7 +214,7 @@ int main() {
 	printAgents(agents);
 
 	makeMap(map);
-	printMap(map);
+//	printMap(map);
 
 	map[0][0] = (*agents.begin()).getColor();
 	planMap[0][0] = (*agents.begin()).getColor();
@@ -200,7 +242,7 @@ int main() {
 					planMap[newCoordinates.first][newCoordinates.second] = (*agent).getColor();
 					--countOfCells;
 				}
-				printMap(map);
+		//		printMap(map);
 			}
 			//	Sleep(100);
 		}
@@ -209,6 +251,65 @@ int main() {
 	cout << "Number of iterations: " << countOfIteration << endl;
 	cout << "Map after covering: " << endl;
 	printMap(map);
+
+	////////////////////////////SECOND IDEA/////////////////////////////////
+
+	cout << "Second idea\n";
+
+	countOfCells = width * height;
+	agents.clear();
+
+	makeAgents(agents);
+	printAgents(agents);
+	
+	map.clear();
+
+	makeMap(map);
+//	printMap(map);
+
+	map[0][0] = (*agents.begin()).getColor();
+	planMap[0][0] = (*agents.begin()).getColor();
+	
+	--countOfCells;
+	countOfIteration = 1;
+
+	int step = width / countOfAgents;
+	int err = width % countOfAgents;
+	vector<int> moveHorison;
+	moveHorison.resize(countOfAgents + 1);
+
+	moveHorison[(*agents.begin()).getColor()] = UP;
+
+	while (countOfCells != 0) {
+		++countOfIteration;
+		for (auto agent = agents.begin(); agent != agents.end(); ++agent) {
+			if (err != 0) {
+				if (moveHorison[(*agent).getColor()] == VERTICAL_MOVE && (*agent).getCoordinates().second == ((*agent).getColor() - 1) * (step + 1)) {
+					--err;
+					moveHorison[(*agent).getColor()] = UP;
+				}
+			}
+			else
+					if (moveHorison[(*agent).getColor()] == VERTICAL_MOVE && (*agent).getCoordinates().second == ((*agent).getColor() -1 ) * step) {
+						moveHorison[(*agent).getColor()] = UP;
+					}
+
+				auto newCoordinates = (*agent).makeStep(moveHorison[(*agent).getColor()]);
+
+				if (map[newCoordinates.first][newCoordinates.second] == 0) {
+					map[newCoordinates.first][newCoordinates.second] = (*agent).getColor();
+					//planMap[newCoordinates.first][newCoordinates.second] = (*agent).getColor();
+					--countOfCells;
+				}
+			
+		}
+		//printMap(map);
+	}
+
+	cout << "Number of iterations: " << countOfIteration << endl;
+	cout << "Final map: \n";
+	printMap(map);
+
 	system("Pause");
 	return 0;
 }
